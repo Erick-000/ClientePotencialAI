@@ -2,8 +2,8 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 
-// Rutas que requieren autenticación
-const PROTECTED_PREFIXES = ["/dashboard", "/leads", "/kanban", "/api/leads", "/api/reminders", "/api/ai"]
+// Rutas que requieren autenticación estricta (ninguna por ahora)
+const PROTECTED_PREFIXES: string[] = []
 
 export async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
