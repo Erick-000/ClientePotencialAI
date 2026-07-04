@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     const leads = await prisma.lead.findMany({
       where: { deviceId },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
     })
 
     if (format === "csv") {

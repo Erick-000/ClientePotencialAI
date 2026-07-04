@@ -14,9 +14,10 @@ export async function GET() {
     where: {
       deviceId,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [
+      { order: "asc" },
+      { createdAt: "desc" },
+    ],
   })
 
   return NextResponse.json(leads)

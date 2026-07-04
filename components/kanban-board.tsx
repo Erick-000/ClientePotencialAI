@@ -335,30 +335,66 @@ export function KanbanBoard({ initialLeads }: { initialLeads: Lead[] }) {
       ? (overId as Lead["status"])
       : (overLead?.status ?? lead.status)
 
-    // Reorder within the same column using arrayMove
-    if (!overIsColumn && overLead && targetStatus === lead.status) {
+    // Determine the new state of the target column
+    let newColLeads: Lead[] = []
+    
+    if (targetStatus === lead.status) {
+      // Reordering within the same column
       const colLeads = leads.filter((l) => l.status === lead.status)
       const oldIdx = colLeads.findIndex((l) => l.id === activeLeadId)
       const newIdx = colLeads.findIndex((l) => l.id === overId)
       if (oldIdx !== newIdx) {
-        const reordered = arrayMove(colLeads, oldIdx, newIdx)
+        newColLeads = arrayMove(colLeads, oldIdx, newIdx)
         setLeads((prev) => [
           ...prev.filter((l) => l.status !== lead.status),
-          ...reordered,
+          ...newColLeads,
         ])
+      } else {
+        return // no change
       }
-      return // no status change needed
+    } else {
+      // Moving to a different column
+      // `handleDragOver` already moved it optimistically, but let's re-calculate to be safe
+      // Actually `leads` state here already reflects the status change from `handleDragOver` 
+      // EXCEPT the optimistic update in `handleDragOver` might have put it at the end.
+      // We should use `arrayMove` if dropped over another item.
+      const colLeads = leads.filter((l) => l.status === targetStatus && l.id !== activeLeadId)
+      const overIdx = colLeads.findIndex((l) => l.id === overId)
+      
+      const updatedLead = { ...lead, status: targetStatus }
+      
+      if (overIsColumn || overIdx === -1) {
+        newColLeads = [...colLeads, updatedLead]
+      } else {
+        // insert at specific position
+        newColLeads = [
+          ...colLeads.slice(0, overIdx),
+          updatedLead,
+          ...colLeads.slice(overIdx)
+        ]
+      }
+      
+      setLeads((prev) => [
+        ...prev.filter((l) => l.status !== targetStatus && l.id !== activeLeadId),
+        ...newColLeads,
+      ])
     }
 
-    // Status changed — persist to DB
+    // Persist to DB (bulk update order and status for the affected column)
     try {
-      await fetch(`/api/leads/${lead.id}`, {
-        method: "PATCH",
+      const payload = newColLeads.map((l, index) => ({
+        id: l.id,
+        order: index,
+        status: targetStatus,
+      }))
+      
+      await fetch(`/api/leads/reorder`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: targetStatus }),
+        body: JSON.stringify({ items: payload }),
       })
     } catch {
-      toast.error("Error al actualizar el estado")
+      toast.error("Error al guardar el nuevo orden")
     }
   }
 

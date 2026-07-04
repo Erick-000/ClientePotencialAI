@@ -7,7 +7,7 @@ export default async function KanbanPage() {
   const deviceId = (await cookies()).get("deviceId")?.value
   const leads = await prisma.lead.findMany({
     where: deviceId ? { deviceId } : { deviceId: "none" },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ order: "asc" }, { createdAt: "desc" }],
   })
 
   return (
