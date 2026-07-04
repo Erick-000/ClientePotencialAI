@@ -113,6 +113,12 @@ export default function LeadsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("ALL")
+  const [priorityFilter, setPriorityFilter] = useState("ALL")
+  const [budgetMin, setBudgetMin] = useState("")
+  const [budgetMax, setBudgetMax] = useState("")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const router = useRouter()
 
@@ -148,9 +154,14 @@ export default function LeadsPage() {
 
   const filteredLeads = useMemo(() => {
     const search = searchTerm.trim().toLowerCase()
+    const minBudget = budgetMin ? parseInt(budgetMin.replace(/\D/g, ""), 10) : null
+    const maxBudget = budgetMax ? parseInt(budgetMax.replace(/\D/g, ""), 10) : null
+    const fromDate = dateFrom ? new Date(dateFrom) : null
+    const toDate = dateTo ? new Date(dateTo + "T23:59:59") : null
 
     return leads.filter((lead) => {
       const matchesStatus = statusFilter === "ALL" || lead.status === statusFilter
+      const matchesPriority = priorityFilter === "ALL" || lead.priority === priorityFilter
       const searchableText = [
         lead.name,
         lead.company,
@@ -163,9 +174,25 @@ export default function LeadsPage() {
         .join(" ")
         .toLowerCase()
 
-      return matchesStatus && (!search || searchableText.includes(search))
+      const budget = lead.estimatedBudget ?? lead.clientBudget ?? null
+      const matchesBudgetMin = minBudget === null || (budget !== null && budget >= minBudget)
+      const matchesBudgetMax = maxBudget === null || (budget !== null && budget <= maxBudget)
+
+      const createdAt = new Date(lead.createdAt)
+      const matchesDateFrom = !fromDate || createdAt >= fromDate
+      const matchesDateTo = !toDate || createdAt <= toDate
+
+      return (
+        matchesStatus &&
+        matchesPriority &&
+        matchesBudgetMin &&
+        matchesBudgetMax &&
+        matchesDateFrom &&
+        matchesDateTo &&
+        (!search || searchableText.includes(search))
+      )
     })
-  }, [leads, searchTerm, statusFilter])
+  }, [leads, searchTerm, statusFilter, priorityFilter, budgetMin, budgetMax, dateFrom, dateTo])
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / LEADS_PER_PAGE))
   const visibleStart = filteredLeads.length === 0 ? 0 : (currentPage - 1) * LEADS_PER_PAGE + 1
@@ -178,7 +205,7 @@ export default function LeadsPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, statusFilter])
+  }, [searchTerm, statusFilter, priorityFilter, budgetMin, budgetMax, dateFrom, dateTo])
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -451,7 +478,7 @@ export default function LeadsPage() {
 
       <Card className="rounded-[2rem] border border-slate-200 bg-white shadow-sm">
         <CardContent className="space-y-4 p-4 sm:p-5">
-          <div className="grid gap-3 lg:grid-cols-[1fr_240px]">
+          <div className="grid gap-3 lg:grid-cols-[1fr_240px_auto]">
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
@@ -475,16 +502,92 @@ export default function LeadsPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 flex-shrink-0 rounded-full border-slate-200"
+              onClick={() => setShowAdvanced((v) => !v)}
+              title="Filtros avanzados"
+            >
+              <TrendingUp className={`h-4 w-4 transition-colors ${showAdvanced ? "text-emerald-600" : "text-slate-400"}`} />
+            </Button>
           </div>
+
+          {/* Advanced Filters Panel */}
+          {showAdvanced && (
+            <div className="grid gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Priority */}
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-slate-600">Prioridad</label>
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white text-sm">
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Todas las prioridades</SelectItem>
+                    <SelectItem value="HIGH">Alta</SelectItem>
+                    <SelectItem value="MEDIUM">Media</SelectItem>
+                    <SelectItem value="LOW">Baja</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Budget min */}
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-slate-600">Presupuesto mínimo (COP)</label>
+                <Input
+                  type="number"
+                  value={budgetMin}
+                  onChange={(e) => setBudgetMin(e.target.value)}
+                  placeholder="Ej. 1000000"
+                  className="h-10 rounded-xl border-slate-200 bg-white text-sm"
+                />
+              </div>
+              {/* Budget max */}
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-slate-600">Presupuesto máximo (COP)</label>
+                <Input
+                  type="number"
+                  value={budgetMax}
+                  onChange={(e) => setBudgetMax(e.target.value)}
+                  placeholder="Ej. 10000000"
+                  className="h-10 rounded-xl border-slate-200 bg-white text-sm"
+                />
+              </div>
+              {/* Date range */}
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-slate-600">Rango de fechas</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="h-10 rounded-xl border-slate-200 bg-white text-sm"
+                  />
+                  <span className="text-slate-400">–</span>
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="h-10 rounded-xl border-slate-200 bg-white text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
             <p>
               Mostrando <span className="font-bold text-slate-900">{visibleStart}-{visibleEnd}</span> de {filteredLeads.length} oportunidades.
             </p>
-            {(searchTerm || statusFilter !== "ALL") && (
+            {(searchTerm || statusFilter !== "ALL" || priorityFilter !== "ALL" || budgetMin || budgetMax || dateFrom || dateTo) && (
               <Button variant="ghost" size="sm" onClick={() => {
                 setSearchTerm("")
                 setStatusFilter("ALL")
+                setPriorityFilter("ALL")
+                setBudgetMin("")
+                setBudgetMax("")
+                setDateFrom("")
+                setDateTo("")
               }}>
                 Limpiar filtros
               </Button>

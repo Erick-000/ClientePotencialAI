@@ -223,19 +223,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 bg-slate-950 px-4 py-12 text-white sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.15fr_0.85fr_0.85fr]">
+      <footer className="border-t border-slate-200 bg-white px-4 py-12 text-slate-700 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.5fr_1fr]">
           <div>
             <Link href="/" className="inline-flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white shadow-sm">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
                 <Image src="/favicon.png" alt="ClientePotencial AI" width={32} height={32} className="h-8 w-8 object-contain" />
               </span>
               <span>
-                <span className="block text-lg font-bold">ClientePotencial AI</span>
-                <span className="text-sm text-emerald-300">CRM comercial con análisis inteligente</span>
+                <span className="block text-lg font-bold text-slate-900">ClientePotencial AI</span>
+                <span className="text-sm text-emerald-600">CRM comercial con análisis inteligente</span>
               </span>
             </Link>
-            <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300">
+            <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600">
               Diseñado para convertir conversaciones con posibles clientes en registros ordenados,
               presupuestos en COP, acciones claras y seguimiento comercial sin perder contexto.
             </p>
@@ -245,20 +245,20 @@ export default function LandingPage() {
                 [Database, "Prisma + PostgreSQL"],
                 [Sparkles, "IA accionable"],
               ].map(([Icon, label]) => (
-                <div key={label as string} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-slate-200">
-                  <Icon className="mb-3 h-5 w-5 text-emerald-300" />
+                <div key={label as string} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 font-medium">
+                  <Icon className="mb-3 h-5 w-5 text-emerald-600" />
                   {label as string}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-2">
             <div>
               <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">Navegación</h2>
               <div className="mt-4 grid gap-3 text-sm">
                 {footerLinks.map((item) => (
-                  <Link key={item.href} href={item.href} className="text-slate-300 transition hover:text-white">
+                  <Link key={item.href} href={item.href} className="text-slate-600 transition hover:text-emerald-700 font-medium">
                     {item.label}
                   </Link>
                 ))}
@@ -268,39 +268,19 @@ export default function LandingPage() {
               <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">Stack</h2>
               <div className="mt-4 flex flex-wrap gap-2">
                 {footerStack.map((item) => (
-                  <span key={item} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-200">
+                  <span key={item} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
                     {item}
                   </span>
                 ))}
               </div>
             </div>
           </div>
-
-          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
-              <MessageSquareText className="h-4 w-4" />
-              Proyecto listo para crecer
-            </div>
-            <p className="mt-3 text-sm leading-7 text-slate-300">
-              Próximos pasos recomendados: autenticación, historial de actividades, exportación CSV,
-              plantillas de mensajes y despliegue con variables seguras.
-            </p>
-            <a
-              href="https://github.com/Erick-000/ClientePotencialAI"
-              target="_blank"
-              rel="noreferrer"
-              className="mt-5 inline-flex h-11 items-center rounded-full border border-white/10 bg-white px-4 text-sm font-bold text-slate-950 transition hover:bg-emerald-100"
-            >
-              <Github className="mr-2 h-4 w-4" />
-              Ver repositorio
-            </a>
-          </div>
         </div>
 
-        <div className="mx-auto mt-10 flex max-w-7xl flex-col gap-3 border-t border-white/10 pt-6 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto mt-10 flex max-w-7xl flex-col gap-3 border-t border-slate-200 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <span>© 2026 ClientePotencial AI. Todos los derechos reservados.</span>
-          <span className="inline-flex items-center gap-2">
-            <Code2 className="h-4 w-4 text-emerald-300" />
+          <span className="inline-flex items-center gap-2 font-medium">
+            <Code2 className="h-4 w-4 text-emerald-600" />
             Hecho para equipos pequeños que venden con contexto.
           </span>
         </div>

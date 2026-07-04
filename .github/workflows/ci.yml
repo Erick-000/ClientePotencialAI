@@ -1,0 +1,98 @@
+name: Validacion del proyecto
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Instalar y compilar
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: postgresql://user:password@localhost:5432/clientepotencial?schema=public
+      OPENAI_API_KEY: missing-openai-api-key
+      NEXTAUTH_SECRET: ci-nextauth-secret-placeholder-32chars
+      NEXTAUTH_URL: http://localhost:3000
+
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar cliente Prisma
+        run: npx prisma generate
+
+      - name: Compilar aplicacion
+        run: npm run build
+
+  e2e:
+    name: Pruebas E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: build
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: clientepotencial
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://user:password@localhost:5432/clientepotencial?schema=public
+      OPENAI_API_KEY: missing-openai-api-key
+      NEXTAUTH_SECRET: ci-nextauth-secret-placeholder-32chars
+      NEXTAUTH_URL: http://localhost:3000
+
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar navegadores Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Ejecutar migraciones
+        run: npx prisma migrate deploy
+
+      - name: Cargar datos demo
+        run: npx prisma db seed
+
+      - name: Ejecutar pruebas E2E
+        run: npm run test:e2e
+
+      - name: Subir reporte de pruebas
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

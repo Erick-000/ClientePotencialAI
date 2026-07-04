@@ -1,10 +1,11 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { ArrowLeft, BarChart3, PlusCircle, Users } from "lucide-react"
+import { ArrowLeft, BarChart3, Download, Kanban, PlusCircle, Users } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { toast } from "sonner"
 
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname()
@@ -20,7 +21,29 @@ export function Sidebar({ className }: { className?: string }) {
       label: "Prospectos",
       icon: Users,
     },
+    {
+      href: "/kanban",
+      label: "Kanban",
+      icon: Kanban,
+    },
   ]
+
+  const handleExport = async () => {
+    try {
+      const res = await fetch("/api/leads/export?format=csv")
+      if (!res.ok) throw new Error("Error al exportar")
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `prospectos-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success("CSV descargado")
+    } catch {
+      toast.error("Error al exportar CSV")
+    }
+  }
 
   return (
     <aside className={cn("flex h-screen w-72 flex-col border-r border-slate-200 bg-white md:sticky md:left-0 md:top-0 md:w-64 md:z-30", className)}>
@@ -84,10 +107,19 @@ export function Sidebar({ className }: { className?: string }) {
             <p className="text-xs text-slate-500">Agrega y califica un prospecto.</p>
           </div>
         </Link>
+
+        <button
+          onClick={handleExport}
+          className="mt-2 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-500 transition-all duration-200 hover:bg-slate-50 hover:text-slate-800"
+        >
+          <Download className="h-5 w-5 text-slate-400" />
+          <span>Exportar CSV</span>
+        </button>
+
         <Link
           href="/"
           className={cn(
-            "mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200",
+            "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200",
             pathname === "/"
               ? "border border-emerald-100 bg-emerald-50 text-emerald-800 shadow-sm"
               : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"

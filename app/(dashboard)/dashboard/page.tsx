@@ -44,6 +44,7 @@ import {
 import Link from 'next/link'
 import { Lead } from '@prisma/client'
 import { Skeleton } from '@/components/ui/skeleton'
+import { RemindersWidget } from '@/components/reminders-widget'
 
 const STATUS_COLORS = {
   NEW: '#3b82f6', // blue
@@ -265,21 +266,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Metrics Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* Metrics Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Prospectos"
           value={totalLeads}
           icon={Users}
-          subtitle={totalLeads === 0 ? 'Aún no tienes prospectos' : `${activeLeads} activos`}
-          colorClass="text-blue-600"
-          bgClass="bg-blue-50"
-        />
-        <MetricCard
-          title="Prospectos Activos"
-          value={activeLeads}
-          icon={TrendingUp}
-          subtitle={totalLeads === 0 ? 'Registra tu primer prospecto' : `${totalLeads - activeLeads} cerrados`}
           colorClass="text-emerald-600"
           bgClass="bg-emerald-50"
         />
@@ -414,8 +406,9 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent Prospects */}
-      <Card className="border border-gray-100 shadow-sm bg-white">
+      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        {/* Recent Prospects */}
+        <Card className="border border-gray-100 shadow-sm bg-white">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <div>
             <CardTitle className="text-xl font-bold text-gray-800">
@@ -516,6 +509,12 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Reminders Widget */}
+      <div>
+        <RemindersWidget />
+      </div>
+      </div>
     </div>
   )
 }

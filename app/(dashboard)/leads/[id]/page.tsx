@@ -51,6 +51,7 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { Toaster } from "@/components/ui/sonner"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ActivityFeed } from "@/components/activity-feed"
 
 type LeadFormValues = z.infer<typeof LeadSchema>
 
@@ -354,12 +355,13 @@ export default function LeadDetailPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-gray-100">
+        <TabsList className="bg-gray-100 flex-wrap h-auto p-1">
           <TabsTrigger value="info">Resumen</TabsTrigger>
           <TabsTrigger value="analysis">Análisis IA</TabsTrigger>
           <TabsTrigger value="budget">Presupuesto</TabsTrigger>
           <TabsTrigger value="scope">Alcance</TabsTrigger>
           <TabsTrigger value="message">Mensaje</TabsTrigger>
+          <TabsTrigger value="history">Historial</TabsTrigger>
         </TabsList>
 
         <TabsContent value="info" className="space-y-6 pt-4">
@@ -465,6 +467,12 @@ export default function LeadDetailPage() {
                 </CardContent>
               </Card>
             )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="history" className="pt-4">
+          <div className="max-w-3xl">
+            <ActivityFeed leadId={lead.id} />
           </div>
         </TabsContent>
 

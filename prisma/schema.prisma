@@ -7,8 +7,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Authentication ────────────────────────────────────────────────────────────
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  password      String?
+  role          UserRole   @default(USER)
+  image         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  activities    Activity[]
+  reminders     Reminder[]
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+// ─── CRM Core ──────────────────────────────────────────────────────────────────
+
 model Lead {
-  id                 String   @id @default(cuid())
+  id                 String        @id @default(cuid())
   name               String
   company            String?
   email              String?
@@ -19,7 +41,7 @@ model Lead {
   estimatedMinBudget Int?
   estimatedBudget    Int?
   estimatedMaxBudget Int?
-  status             LeadStatus @default(NEW)
+  status             LeadStatus    @default(NEW)
   priority           LeadPriority?
   complexity         Complexity?
   opportunityLevel   String?
@@ -28,8 +50,10 @@ model Lead {
   suggestedMessage   String?
   scope              Json?
   notes              String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  activities         Activity[]
+  reminders          Reminder[]
 }
 
 enum LeadStatus {
@@ -52,4 +76,43 @@ enum Complexity {
   LOW
   MEDIUM
   HIGH
+}
+
+// ─── Activity Feed ─────────────────────────────────────────────────────────────
+
+model Activity {
+  id        String       @id @default(cuid())
+  leadId    String
+  userId    String?
+  type      ActivityType
+  detail    String?
+  createdAt DateTime     @default(now())
+  lead      Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+enum ActivityType {
+  CREATED
+  UPDATED
+  STATUS_CHANGED
+  NOTE_ADDED
+  EMAIL_SENT
+  CALL_MADE
+  MEETING_HELD
+  AI_ANALYZED
+}
+
+// ─── Reminders ─────────────────────────────────────────────────────────────────
+
+model Reminder {
+  id        String   @id @default(cuid())
+  leadId    String
+  userId    String?
+  message   String
+  dueAt     DateTime
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
