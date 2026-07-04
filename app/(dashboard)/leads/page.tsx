@@ -122,6 +122,7 @@ export default function LeadsPage() {
   const [dateTo, setDateTo] = useState("")
   const [dateError, setDateError] = useState<string | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [formCurrency, setFormCurrency] = useState<Currency>("COP")
   const [currentPage, setCurrentPage] = useState(1)
   const router = useRouter()
 
@@ -130,6 +131,8 @@ export default function LeadsPage() {
     register,
     handleSubmit,
     reset,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LeadFormValues>({
     resolver: zodResolver(LeadSchema),
@@ -229,6 +232,7 @@ export default function LeadsPage() {
   const clients = leads.filter((lead) => lead.status === "CLIENT").length
 
   const openCreateDialog = () => {
+    setFormCurrency("COP")
     reset({
       name: "",
       company: "",
@@ -243,10 +247,16 @@ export default function LeadsPage() {
 
   const onSubmit = async (data: LeadFormValues) => {
     try {
+      const budgetCOP = data.clientBudget 
+        ? (formCurrency === "USD" ? Math.round(data.clientBudget * USD_TO_COP) : data.clientBudget) 
+        : undefined
+
+      const payload = { ...data, clientBudget: budgetCOP }
+
       const response = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
@@ -419,7 +429,14 @@ export default function LeadsPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="clientBudget" className="font-semibold text-slate-700">Presupuesto que menciona el cliente</Label>
+                  <Label htmlFor="clientBudget" className="flex items-center gap-2 font-semibold text-slate-700">
+                    Presupuesto que menciona el cliente
+                    {formCurrency === "USD" && (
+                      <span className="text-[10px] font-normal text-slate-400">
+                        (1 USD ≈ $4.200 COP)
+                      </span>
+                    )}
+                  </Label>
                   <Controller
                     name="clientBudget"
                     control={control}
@@ -429,7 +446,20 @@ export default function LeadsPage() {
                         value={field.value}
                         onValueChange={field.onChange}
                         onBlur={field.onBlur}
-                        placeholder="5.000.000"
+                        currency={formCurrency}
+                        showCurrencyToggle
+                        onCurrencyChange={(c) => {
+                          const currentVal = getValues("clientBudget")
+                          if (currentVal) {
+                            if (c === "USD" && formCurrency === "COP") {
+                              setValue("clientBudget", Math.round(currentVal / USD_TO_COP))
+                            } else if (c === "COP" && formCurrency === "USD") {
+                              setValue("clientBudget", Math.round(currentVal * USD_TO_COP))
+                            }
+                          }
+                          setFormCurrency(c)
+                        }}
+                        placeholder={formCurrency === "COP" ? "5.000.000" : "5,000"}
                         className="h-11 rounded-2xl border-slate-200 bg-white shadow-sm"
                         aria-invalid={Boolean(errors.clientBudget)}
                       />

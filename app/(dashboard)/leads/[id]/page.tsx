@@ -20,7 +20,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { CurrencyInput } from "@/components/ui/currency-input"
+import { CurrencyInput, type Currency } from "@/components/ui/currency-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -71,12 +71,15 @@ export default function LeadDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [activeTab, setActiveTab] = useState("info")
+  const [formCurrency, setFormCurrency] = useState<Currency>("COP")
 
   const {
     control,
     register,
     handleSubmit,
     reset,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LeadFormValues>({
     resolver: zodResolver(LeadSchema),
@@ -95,6 +98,7 @@ export default function LeadDetailPage() {
   useEffect(() => {
     const shouldOpenEdit = new URLSearchParams(window.location.search).get("edit") === "1"
     if (lead && shouldOpenEdit) {
+      setFormCurrency("COP")
       reset(getLeadFormValues(lead))
       setEditOpen(true)
       window.history.replaceState(null, "", window.location.pathname)
@@ -175,14 +179,22 @@ export default function LeadDetailPage() {
     }
   }
 
+  const USD_TO_COP = 4200 // approximate fixed rate
+
   const onEditSubmit = async (data: LeadFormValues) => {
     try {
+      const budgetCOP = data.clientBudget 
+        ? (formCurrency === "USD" ? Math.round(data.clientBudget * USD_TO_COP) : data.clientBudget) 
+        : undefined
+
+      const payload = { ...data, clientBudget: budgetCOP }
+
       const response = await fetch(`/api/leads/${params.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
@@ -722,7 +734,10 @@ export default function LeadDetailPage() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog open={editOpen} onOpenChange={(val) => {
+        setEditOpen(val)
+        if (val) setFormCurrency("COP")
+      }}>
         <DialogContent className="max-h-[92vh] overflow-hidden border-slate-200 p-0 sm:max-w-[720px]">
           <form onSubmit={handleSubmit(onEditSubmit)} className="flex max-h-[92vh] flex-col">
             <DialogHeader className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-slate-50 px-6 py-5">
@@ -821,8 +836,13 @@ export default function LeadDetailPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label htmlFor="clientBudget" className="font-semibold text-slate-700">
-                    Presupuesto del Cliente (COP)
+                  <Label htmlFor="clientBudget" className="flex items-center gap-2 font-semibold text-slate-700">
+                    Presupuesto del Cliente
+                    {formCurrency === "USD" && (
+                      <span className="text-[10px] font-normal text-slate-400">
+                        (1 USD ≈ $4.200 COP)
+                      </span>
+                    )}
                   </Label>
                   <Controller
                     name="clientBudget"
@@ -833,7 +853,20 @@ export default function LeadDetailPage() {
                         value={field.value}
                         onValueChange={field.onChange}
                         onBlur={field.onBlur}
-                        placeholder="5.000.000"
+                        currency={formCurrency}
+                        showCurrencyToggle
+                        onCurrencyChange={(c) => {
+                          const currentVal = getValues("clientBudget")
+                          if (currentVal) {
+                            if (c === "USD" && formCurrency === "COP") {
+                              setValue("clientBudget", Math.round(currentVal / USD_TO_COP))
+                            } else if (c === "COP" && formCurrency === "USD") {
+                              setValue("clientBudget", Math.round(currentVal * USD_TO_COP))
+                            }
+                          }
+                          setFormCurrency(c)
+                        }}
+                        placeholder={formCurrency === "COP" ? "5.000.000" : "5,000"}
                         className="h-11 border-slate-300"
                       />
                     )}
