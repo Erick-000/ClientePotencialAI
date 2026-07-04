@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { LeadSchema } from "@/lib/validations"
+import { cookies } from "next/headers"
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deviceId = (await cookies()).get("deviceId")?.value
   const { id } = await params
-  const lead = await prisma.lead.findUnique({
-    where: { id },
+  const lead = await prisma.lead.findFirst({
+    where: { id, deviceId },
   })
 
   if (!lead) {
@@ -22,7 +24,12 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deviceId = (await cookies()).get("deviceId")?.value
   const { id } = await params
+  
+  const existing = await prisma.lead.findFirst({ where: { id, deviceId } })
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
   const body = await request.json()
   const parsed = LeadSchema.partial().passthrough().safeParse(body)
 
@@ -45,7 +52,12 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deviceId = (await cookies()).get("deviceId")?.value
   const { id } = await params
+  
+  const existing = await prisma.lead.findFirst({ where: { id, deviceId } })
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
   const body = await request.json()
 
   const lead = await prisma.lead.update({
@@ -60,7 +72,12 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deviceId = (await cookies()).get("deviceId")?.value
   const { id } = await params
+  
+  const existing = await prisma.lead.findFirst({ where: { id, deviceId } })
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
   await prisma.lead.delete({
     where: { id },
   })

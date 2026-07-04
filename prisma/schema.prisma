@@ -50,6 +50,7 @@ model Lead {
   suggestedMessage   String?
   scope              Json?
   notes              String?
+  deviceId           String?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   activities         Activity[]
@@ -84,6 +85,7 @@ model Activity {
   id        String       @id @default(cuid())
   leadId    String
   userId    String?
+  deviceId  String?
   type      ActivityType
   detail    String?
   createdAt DateTime     @default(now())
@@ -108,6 +110,7 @@ model Reminder {
   id        String   @id @default(cuid())
   leadId    String
   userId    String?
+  deviceId  String?
   message   String
   dueAt     DateTime
   done      Boolean  @default(false)

@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import { cookies } from "next/headers"
 
 // GET /api/leads/export?format=csv
 export async function GET(req: NextRequest) {
   try {
+    const deviceId = (await cookies()).get("deviceId")?.value
+    if (!deviceId) return new NextResponse("No device ID", { status: 401 })
+
     const { searchParams } = new URL(req.url)
     const format = searchParams.get("format") ?? "csv"
 
     const leads = await prisma.lead.findMany({
+      where: { deviceId },
       orderBy: { createdAt: "desc" },
     })
 

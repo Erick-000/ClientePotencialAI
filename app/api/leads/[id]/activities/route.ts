@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import { cookies } from "next/headers"
 
 // GET /api/leads/[id]/activities — listar historial
 export async function GET(
@@ -7,9 +8,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const deviceId = (await cookies()).get("deviceId")?.value
     const { id } = await params
     const activities = await prisma.activity.findMany({
-      where: { leadId: id },
+      where: { leadId: id, deviceId },
       orderBy: { createdAt: "desc" },
       include: { user: { select: { name: true, email: true } } },
     })
@@ -25,6 +27,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const deviceId = (await cookies()).get("deviceId")?.value
     const { id } = await params
     const body = await req.json()
     const { type, detail, userId } = body
@@ -32,6 +35,7 @@ export async function POST(
     const activity = await prisma.activity.create({
       data: {
         leadId: id,
+        deviceId,
         type,
         detail: detail ?? null,
         userId: userId ?? null,

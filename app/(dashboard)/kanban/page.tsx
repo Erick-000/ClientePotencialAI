@@ -1,9 +1,12 @@
 import prisma from "@/lib/prisma"
 import { KanbanBoard } from "@/components/kanban-board"
 import { LayoutDashboard } from "lucide-react"
+import { cookies } from "next/headers"
 
 export default async function KanbanPage() {
+  const deviceId = (await cookies()).get("deviceId")?.value
   const leads = await prisma.lead.findMany({
+    where: deviceId ? { deviceId } : { deviceId: "none" },
     orderBy: { createdAt: "desc" },
   })
 
