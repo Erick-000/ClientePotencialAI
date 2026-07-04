@@ -28,6 +28,8 @@ import {
   AlertCircle,
   Clock,
   Zap,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -36,88 +38,26 @@ import { toast } from "sonner"
 const COLUMNS: {
   id: string
   label: string
-  headerColor: string
+  shortLabel: string
   dotColor: string
-  accentColor: string
   emptyMsg: string
 }[] = [
-  {
-    id: "NEW",
-    label: "Nuevo",
-    headerColor: "bg-blue-500",
-    dotColor: "bg-blue-500",
-    accentColor: "border-t-blue-400",
-    emptyMsg: "Sin leads nuevos",
-  },
-  {
-    id: "CONTACTED",
-    label: "Contactado",
-    headerColor: "bg-indigo-500",
-    dotColor: "bg-indigo-500",
-    accentColor: "border-t-indigo-400",
-    emptyMsg: "Nadie contactado",
-  },
-  {
-    id: "DIAGNOSIS",
-    label: "Diagnóstico",
-    headerColor: "bg-violet-500",
-    dotColor: "bg-violet-500",
-    accentColor: "border-t-violet-400",
-    emptyMsg: "Sin diagnósticos",
-  },
-  {
-    id: "PROPOSAL_SENT",
-    label: "Propuesta",
-    headerColor: "bg-cyan-500",
-    dotColor: "bg-cyan-500",
-    accentColor: "border-t-cyan-400",
-    emptyMsg: "Sin propuestas enviadas",
-  },
-  {
-    id: "NEGOTIATION",
-    label: "Negociación",
-    headerColor: "bg-sky-500",
-    dotColor: "bg-sky-500",
-    accentColor: "border-t-sky-400",
-    emptyMsg: "Sin negociaciones",
-  },
-  {
-    id: "CLIENT",
-    label: "Cliente ✓",
-    headerColor: "bg-emerald-500",
-    dotColor: "bg-emerald-500",
-    accentColor: "border-t-emerald-400",
-    emptyMsg: "Aún sin clientes",
-  },
-  {
-    id: "DISCARDED",
-    label: "Descartado",
-    headerColor: "bg-rose-400",
-    dotColor: "bg-rose-400",
-    accentColor: "border-t-rose-300",
-    emptyMsg: "Sin descartados",
-  },
+  { id: "NEW",           label: "Nuevo",        shortLabel: "Nuevo",    dotColor: "bg-blue-500",    emptyMsg: "Sin leads nuevos" },
+  { id: "CONTACTED",     label: "Contactado",    shortLabel: "Contact.", dotColor: "bg-indigo-500",  emptyMsg: "Nadie contactado" },
+  { id: "DIAGNOSIS",     label: "Diagnóstico",   shortLabel: "Diagnós.", dotColor: "bg-violet-500",  emptyMsg: "Sin diagnósticos" },
+  { id: "PROPOSAL_SENT", label: "Propuesta",     shortLabel: "Propues.", dotColor: "bg-cyan-500",    emptyMsg: "Sin propuestas" },
+  { id: "NEGOTIATION",   label: "Negociación",   shortLabel: "Negoc.",   dotColor: "bg-sky-500",     emptyMsg: "Sin negociaciones" },
+  { id: "CLIENT",        label: "Cliente ✓",     shortLabel: "Cliente",  dotColor: "bg-emerald-500", emptyMsg: "Aún sin clientes" },
+  { id: "DISCARDED",     label: "Descartado",    shortLabel: "Descart.", dotColor: "bg-rose-400",    emptyMsg: "Sin descartados" },
 ]
 
 const PRIORITY_CONFIG: Record<
   string,
   { label: string; className: string; icon: typeof AlertCircle }
 > = {
-  HIGH: {
-    label: "Alta",
-    className: "bg-red-50 text-red-600 border border-red-200",
-    icon: AlertCircle,
-  },
-  MEDIUM: {
-    label: "Media",
-    className: "bg-amber-50 text-amber-600 border border-amber-200",
-    icon: Clock,
-  },
-  LOW: {
-    label: "Baja",
-    className: "bg-emerald-50 text-emerald-600 border border-emerald-200",
-    icon: Zap,
-  },
+  HIGH:   { label: "Alta",   className: "bg-red-50 text-red-600 border border-red-200",         icon: AlertCircle },
+  MEDIUM: { label: "Media",  className: "bg-amber-50 text-amber-600 border border-amber-200",   icon: Clock },
+  LOW:    { label: "Baja",   className: "bg-emerald-50 text-emerald-600 border border-emerald-200", icon: Zap },
 }
 
 function formatCop(v?: number | null) {
@@ -127,15 +67,9 @@ function formatCop(v?: number | null) {
   return `$${v.toLocaleString("es-CO")}`
 }
 
-// ─── Draggable Card ─────────────────────────────────────────────────────────────
+// ─── Draggable Card ──────────────────────────────────────────────────────────
 
-function LeadCard({
-  lead,
-  isDragging = false,
-}: {
-  lead: Lead
-  isDragging?: boolean
-}) {
+function LeadCard({ lead, isDragging = false }: { lead: Lead; isDragging?: boolean }) {
   const { setNodeRef, attributes, listeners, transform, transition } =
     useSortable({ id: lead.id })
 
@@ -152,9 +86,8 @@ function LeadCard({
     <div
       ref={setNodeRef}
       style={style}
-      className="group relative rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md active:shadow-lg"
+      className="group relative rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
     >
-      {/* Drag handle — always visible at top right */}
       <button
         {...attributes}
         {...listeners}
@@ -165,26 +98,18 @@ function LeadCard({
       </button>
 
       <div className="p-4 pr-10">
-        {/* Name & company */}
-        <p className="truncate text-sm font-bold leading-snug text-slate-900">
-          {lead.name}
-        </p>
+        <p className="truncate text-sm font-bold leading-snug text-slate-900">{lead.name}</p>
         {lead.company && (
           <p className="mt-0.5 truncate text-xs text-slate-400">{lead.company}</p>
         )}
-
-        {/* Project type */}
         <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-500">
           {lead.projectType}
         </p>
 
-        {/* Badges row */}
         {(priorityCfg || lead.estimatedBudget) && (
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {priorityCfg && PriorityIcon && (
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${priorityCfg.className}`}
-              >
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${priorityCfg.className}`}>
                 <PriorityIcon className="h-2.5 w-2.5" />
                 {priorityCfg.label}
               </span>
@@ -198,7 +123,6 @@ function LeadCard({
           </div>
         )}
 
-        {/* Footer: date + link */}
         <div className="mt-3 flex items-center justify-between">
           <p className="flex items-center gap-1 text-[10px] text-slate-400">
             <Calendar className="h-3 w-3" />
@@ -207,7 +131,6 @@ function LeadCard({
           <Link
             href={`/leads/${lead.id}`}
             className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-600"
-            title="Ver detalle"
           >
             Ver
             <ArrowUpRight className="h-3 w-3" />
@@ -218,66 +141,156 @@ function LeadCard({
   )
 }
 
-// ─── Column ──────────────────────────────────────────────────────────────────
+// ─── Column cards list (shared between mobile & desktop) ────────────────────
 
-function KanbanColumn({
-  column,
-  leads,
-}: {
-  column: (typeof COLUMNS)[0]
-  leads: Lead[]
-}) {
+function ColumnCards({ column, leads }: { column: (typeof COLUMNS)[0]; leads: Lead[] }) {
   const totalBudget = leads.reduce((s, l) => s + (l.estimatedBudget ?? 0), 0)
 
   return (
-    <div className="flex w-72 flex-shrink-0 flex-col rounded-2xl border border-slate-200 bg-slate-50/60 shadow-sm backdrop-blur-sm">
-      {/* Column header */}
-      <div className="flex items-center gap-2.5 rounded-t-2xl bg-white px-4 py-3.5 shadow-sm">
-        <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${column.dotColor}`} />
-        <span className="flex-1 truncate text-sm font-bold text-slate-800">
-          {column.label}
-        </span>
-        <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-100 px-1.5 text-[11px] font-bold text-slate-600">
-          {leads.length}
-        </span>
-      </div>
-
-      {/* Budget subtotal — only if there's data */}
+    <>
       {totalBudget > 0 && (
-        <div className="border-b border-slate-200 bg-white/60 px-4 pb-2.5 pt-0.5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Pipeline:{" "}
-            <span className="text-emerald-700">{formatCop(totalBudget)} COP</span>
-          </p>
-        </div>
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+          Pipeline:{" "}
+          <span className="text-emerald-700">{formatCop(totalBudget)} COP</span>
+        </p>
       )}
-
-      {/* Cards area */}
-      <SortableContext
-        items={leads.map((l) => l.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="flex min-h-[200px] flex-1 flex-col gap-2.5 p-3">
+      <SortableContext items={leads.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+        <div className="flex flex-col gap-2.5">
           {leads.map((lead) => (
             <LeadCard key={lead.id} lead={lead} />
           ))}
 
           {leads.length === 0 && (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-8 text-center">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100">
-                <span className={`h-3 w-3 rounded-full ${column.dotColor} opacity-40`} />
-              </div>
+            <div className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-10 text-center">
+              <span className={`h-3 w-3 rounded-full ${column.dotColor} opacity-40`} />
               <p className="text-xs font-medium text-slate-400">{column.emptyMsg}</p>
               <p className="text-[10px] text-slate-300">Arrastra aquí</p>
             </div>
           )}
         </div>
       </SortableContext>
+    </>
+  )
+}
+
+// ─── Mobile: Tab selector + single column view ───────────────────────────────
+
+function MobileKanban({ leads }: { leads: Lead[] }) {
+  const [activeIdx, setActiveIdx] = useState(0)
+  const col = COLUMNS[activeIdx]
+  const colLeads = leads.filter((l) => l.status === col.id)
+
+  const prev = () => setActiveIdx((i) => Math.max(0, i - 1))
+  const next = () => setActiveIdx((i) => Math.min(COLUMNS.length - 1, i + 1))
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Tab strip */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {COLUMNS.map((c, i) => {
+          const count = leads.filter((l) => l.status === c.id).length
+          return (
+            <button
+              key={c.id}
+              onClick={() => setActiveIdx(i)}
+              className={`flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
+                i === activeIdx
+                  ? "border-slate-800 bg-slate-900 text-white shadow-sm"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+              }`}
+            >
+              <span className={`h-2 w-2 rounded-full ${c.dotColor}`} />
+              {c.shortLabel}
+              {count > 0 && (
+                <span
+                  className={`ml-0.5 rounded-full px-1.5 text-[10px] font-bold ${
+                    i === activeIdx ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Column header bar */}
+      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <button
+          onClick={prev}
+          disabled={activeIdx === 0}
+          className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 disabled:opacity-20"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+
+        <div className="flex items-center gap-2">
+          <span className={`h-2.5 w-2.5 rounded-full ${col.dotColor}`} />
+          <span className="text-sm font-bold text-slate-800">{col.label}</span>
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1.5 text-[11px] font-bold text-slate-600">
+            {colLeads.length}
+          </span>
+        </div>
+
+        <button
+          onClick={next}
+          disabled={activeIdx === COLUMNS.length - 1}
+          className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 disabled:opacity-20"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Cards for selected column */}
+      <div className="min-h-[200px]">
+        <ColumnCards column={col} leads={colLeads} />
+      </div>
     </div>
   )
 }
 
-// ─── Board ────────────────────────────────────────────────────────────────────
+// ─── Desktop: full horizontal scroll board ──────────────────────────────────
+
+function DesktopKanban({ leads }: { leads: Lead[] }) {
+  return (
+    <div className="flex gap-4 overflow-x-auto pb-8 pt-1">
+      {COLUMNS.map((col) => {
+        const colLeads = leads.filter((l) => l.status === col.id)
+        const totalBudget = colLeads.reduce((s, l) => s + (l.estimatedBudget ?? 0), 0)
+        return (
+          <div
+            key={col.id}
+            className="flex w-72 flex-shrink-0 flex-col rounded-2xl border border-slate-200 bg-slate-50/60 shadow-sm"
+          >
+            {/* Header */}
+            <div className="flex items-center gap-2.5 rounded-t-2xl bg-white px-4 py-3.5 shadow-sm">
+              <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${col.dotColor}`} />
+              <span className="flex-1 truncate text-sm font-bold text-slate-800">{col.label}</span>
+              <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-100 px-1.5 text-[11px] font-bold text-slate-600">
+                {colLeads.length}
+              </span>
+            </div>
+
+            {totalBudget > 0 && (
+              <div className="border-b border-slate-200 bg-white/60 px-4 pb-2.5 pt-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                  Pipeline: <span className="text-emerald-700">{formatCop(totalBudget)} COP</span>
+                </p>
+              </div>
+            )}
+
+            <div className="flex min-h-[200px] flex-1 flex-col gap-2.5 p-3">
+              <ColumnCards column={col} leads={colLeads} />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Main Board (responsive) ─────────────────────────────────────────────────
 
 export function KanbanBoard({ initialLeads }: { initialLeads: Lead[] }) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
@@ -289,25 +302,17 @@ export function KanbanBoard({ initialLeads }: { initialLeads: Lead[] }) {
 
   const getColumn = (id: string) => leads.find((l) => l.id === id)?.status
 
-  const handleDragStart = (e: DragStartEvent) => {
-    setActiveId(e.active.id as string)
-  }
+  const handleDragStart = (e: DragStartEvent) => setActiveId(e.active.id as string)
 
   const handleDragOver = (e: DragOverEvent) => {
     const { active, over } = e
     if (!over) return
-
-    const activeId = active.id as string
-    const overId = over.id as string
-
     const overColumn =
-      COLUMNS.find((c) => c.id === overId)?.id ?? getColumn(overId)
-
+      COLUMNS.find((c) => c.id === over.id)?.id ?? getColumn(over.id as string)
     if (!overColumn) return
-
     setLeads((prev) =>
       prev.map((l) =>
-        l.id === activeId ? { ...l, status: overColumn as Lead["status"] } : l
+        l.id === active.id ? { ...l, status: overColumn as Lead["status"] } : l
       )
     )
   }
@@ -316,10 +321,8 @@ export function KanbanBoard({ initialLeads }: { initialLeads: Lead[] }) {
     const { active, over } = e
     setActiveId(null)
     if (!over) return
-
     const lead = leads.find((l) => l.id === active.id)
     if (!lead) return
-
     try {
       await fetch(`/api/leads/${lead.id}`, {
         method: "PATCH",
@@ -341,18 +344,19 @@ export function KanbanBoard({ initialLeads }: { initialLeads: Lead[] }) {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      {/* Scroll container */}
-      <div className="flex gap-4 overflow-x-auto pb-8 pt-1">
-        {COLUMNS.map((col) => (
-          <KanbanColumn
-            key={col.id}
-            column={col}
-            leads={leads.filter((l) => l.status === col.id)}
-          />
-        ))}
+      {/* Mobile */}
+      <div className="md:hidden">
+        <MobileKanban leads={leads} />
       </div>
 
-      <DragOverlay dropAnimation={{ duration: 150, easing: "cubic-bezier(0.18,0.67,0.6,1.22)" }}>
+      {/* Desktop */}
+      <div className="hidden md:block">
+        <DesktopKanban leads={leads} />
+      </div>
+
+      <DragOverlay
+        dropAnimation={{ duration: 150, easing: "cubic-bezier(0.18,0.67,0.6,1.22)" }}
+      >
         {activeLead ? (
           <div className="rotate-1 scale-105 opacity-95">
             <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-2xl">
