@@ -6,6 +6,8 @@ import { Lead } from "@prisma/client"
 import { z } from "zod"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { CurrencyInput, type Currency } from "@/components/ui/currency-input"
+
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -28,7 +30,24 @@ import { LeadSchema } from "@/lib/validations"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CurrencyInput } from "@/components/ui/currency-input"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -114,10 +133,12 @@ export default function LeadsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [priorityFilter, setPriorityFilter] = useState("ALL")
-  const [budgetMin, setBudgetMin] = useState("")
-  const [budgetMax, setBudgetMax] = useState("")
+  const [budgetMin, setBudgetMin] = useState<number | undefined>(undefined)
+  const [budgetMax, setBudgetMax] = useState<number | undefined>(undefined)
+  const [filterCurrency, setFilterCurrency] = useState<Currency>("COP")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
+  const [dateError, setDateError] = useState<string | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const router = useRouter()
@@ -152,11 +173,20 @@ export default function LeadsPage() {
     setLeads(data)
   }
 
+  const USD_TO_COP = 4200 // approximate fixed rate for filtering
+
   const filteredLeads = useMemo(() => {
     const search = searchTerm.trim().toLowerCase()
-    const minBudget = budgetMin ? parseInt(budgetMin.replace(/\D/g, ""), 10) : null
-    const maxBudget = budgetMax ? parseInt(budgetMax.replace(/\D/g, ""), 10) : null
-    const fromDate = dateFrom ? new Date(dateFrom) : null
+
+    // Convert filter budget to COP for comparison
+    const minBudgetCOP = budgetMin != null
+      ? (filterCurrency === "USD" ? Math.round(budgetMin * USD_TO_COP) : budgetMin)
+      : null
+    const maxBudgetCOP = budgetMax != null
+      ? (filterCurrency === "USD" ? Math.round(budgetMax * USD_TO_COP) : budgetMax)
+      : null
+
+    const fromDate = dateFrom ? new Date(dateFrom + "T00:00:00") : null
     const toDate = dateTo ? new Date(dateTo + "T23:59:59") : null
 
     return leads.filter((lead) => {
@@ -175,8 +205,8 @@ export default function LeadsPage() {
         .toLowerCase()
 
       const budget = lead.estimatedBudget ?? lead.clientBudget ?? null
-      const matchesBudgetMin = minBudget === null || (budget !== null && budget >= minBudget)
-      const matchesBudgetMax = maxBudget === null || (budget !== null && budget <= maxBudget)
+      const matchesBudgetMin = minBudgetCOP === null || (budget !== null && budget >= minBudgetCOP)
+      const matchesBudgetMax = maxBudgetCOP === null || (budget !== null && budget <= maxBudgetCOP)
 
       const createdAt = new Date(lead.createdAt)
       const matchesDateFrom = !fromDate || createdAt >= fromDate
@@ -192,7 +222,7 @@ export default function LeadsPage() {
         (!search || searchableText.includes(search))
       )
     })
-  }, [leads, searchTerm, statusFilter, priorityFilter, budgetMin, budgetMax, dateFrom, dateTo])
+  }, [leads, searchTerm, statusFilter, priorityFilter, budgetMin, budgetMax, filterCurrency, dateFrom, dateTo])
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / LEADS_PER_PAGE))
   const visibleStart = filteredLeads.length === 0 ? 0 : (currentPage - 1) * LEADS_PER_PAGE + 1
@@ -205,7 +235,7 @@ export default function LeadsPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, statusFilter, priorityFilter, budgetMin, budgetMax, dateFrom, dateTo])
+  }, [searchTerm, statusFilter, priorityFilter, budgetMin, budgetMax, filterCurrency, dateFrom, dateTo])
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -515,9 +545,9 @@ export default function LeadsPage() {
 
           {/* Advanced Filters Panel */}
           {showAdvanced && (
-            <div className="grid gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* Priority */}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-600">Prioridad</label>
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                   <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white text-sm">
@@ -531,45 +561,84 @@ export default function LeadsPage() {
                   </SelectContent>
                 </Select>
               </div>
+
               {/* Budget min */}
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-600">Presupuesto mínimo (COP)</label>
-                <Input
-                  type="number"
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-600">
+                  Presupuesto mínimo
+                </label>
+                <CurrencyInput
                   value={budgetMin}
-                  onChange={(e) => setBudgetMin(e.target.value)}
-                  placeholder="Ej. 1000000"
-                  className="h-10 rounded-xl border-slate-200 bg-white text-sm"
+                  onValueChange={setBudgetMin}
+                  currency={filterCurrency}
+                  onCurrencyChange={(c) => {
+                    setFilterCurrency(c)
+                    setBudgetMin(undefined)
+                    setBudgetMax(undefined)
+                  }}
+                  showCurrencyToggle
+                  placeholder={filterCurrency === "COP" ? "1.000.000" : "1,000"}
+                  className="h-10 rounded-xl"
                 />
               </div>
+
               {/* Budget max */}
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-600">Presupuesto máximo (COP)</label>
-                <Input
-                  type="number"
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-600">
+                  Presupuesto máximo
+                  {filterCurrency === "USD" && (
+                    <span className="ml-1 text-[10px] font-normal text-slate-400">
+                      (1 USD ≈ $4.200 COP)
+                    </span>
+                  )}
+                </label>
+                <CurrencyInput
                   value={budgetMax}
-                  onChange={(e) => setBudgetMax(e.target.value)}
-                  placeholder="Ej. 10000000"
-                  className="h-10 rounded-xl border-slate-200 bg-white text-sm"
+                  onValueChange={setBudgetMax}
+                  currency={filterCurrency}
+                  showCurrencyToggle={false}
+                  placeholder={filterCurrency === "COP" ? "10.000.000" : "10,000"}
+                  className="h-10 rounded-xl"
                 />
               </div>
+
               {/* Date range */}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-600">Rango de fechas</label>
-                <div className="flex items-center gap-2">
-                  <Input
+                <div className="flex flex-col gap-1.5">
+                  <input
                     type="date"
                     value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="h-10 rounded-xl border-slate-200 bg-white text-sm"
+                    max={dateTo || undefined}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setDateFrom(val)
+                      if (dateTo && val > dateTo) {
+                        setDateError("La fecha inicio no puede ser mayor a la fecha fin")
+                      } else {
+                        setDateError(null)
+                      }
+                    }}
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100"
                   />
-                  <span className="text-slate-400">–</span>
-                  <Input
+                  <input
                     type="date"
                     value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="h-10 rounded-xl border-slate-200 bg-white text-sm"
+                    min={dateFrom || undefined}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setDateTo(val)
+                      if (dateFrom && val < dateFrom) {
+                        setDateError("La fecha fin no puede ser menor a la fecha inicio")
+                      } else {
+                        setDateError(null)
+                      }
+                    }}
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100"
                   />
+                  {dateError && (
+                    <p className="text-[11px] font-medium text-red-600">{dateError}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -579,15 +648,16 @@ export default function LeadsPage() {
             <p>
               Mostrando <span className="font-bold text-slate-900">{visibleStart}-{visibleEnd}</span> de {filteredLeads.length} oportunidades.
             </p>
-            {(searchTerm || statusFilter !== "ALL" || priorityFilter !== "ALL" || budgetMin || budgetMax || dateFrom || dateTo) && (
+            {(searchTerm || statusFilter !== "ALL" || priorityFilter !== "ALL" || budgetMin != null || budgetMax != null || dateFrom || dateTo) && (
               <Button variant="ghost" size="sm" onClick={() => {
                 setSearchTerm("")
                 setStatusFilter("ALL")
                 setPriorityFilter("ALL")
-                setBudgetMin("")
-                setBudgetMax("")
+                setBudgetMin(undefined)
+                setBudgetMax(undefined)
                 setDateFrom("")
                 setDateTo("")
+                setDateError(null)
               }}>
                 Limpiar filtros
               </Button>

@@ -13,6 +13,7 @@ import {
 } from "@dnd-kit/core"
 import {
   SortableContext,
+  arrayMove,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
@@ -321,13 +322,40 @@ export function KanbanBoard({ initialLeads }: { initialLeads: Lead[] }) {
     const { active, over } = e
     setActiveId(null)
     if (!over) return
-    const lead = leads.find((l) => l.id === active.id)
+
+    const activeLeadId = active.id as string
+    const overId = over.id as string
+    const lead = leads.find((l) => l.id === activeLeadId)
     if (!lead) return
+
+    // Check if dropped onto a column header or another card
+    const overIsColumn = COLUMNS.some((c) => c.id === overId)
+    const overLead = leads.find((l) => l.id === overId)
+    const targetStatus = overIsColumn
+      ? (overId as Lead["status"])
+      : (overLead?.status ?? lead.status)
+
+    // Reorder within the same column using arrayMove
+    if (!overIsColumn && overLead && targetStatus === lead.status) {
+      const colLeads = leads.filter((l) => l.status === lead.status)
+      const oldIdx = colLeads.findIndex((l) => l.id === activeLeadId)
+      const newIdx = colLeads.findIndex((l) => l.id === overId)
+      if (oldIdx !== newIdx) {
+        const reordered = arrayMove(colLeads, oldIdx, newIdx)
+        setLeads((prev) => [
+          ...prev.filter((l) => l.status !== lead.status),
+          ...reordered,
+        ])
+      }
+      return // no status change needed
+    }
+
+    // Status changed — persist to DB
     try {
       await fetch(`/api/leads/${lead.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: lead.status }),
+        body: JSON.stringify({ status: targetStatus }),
       })
     } catch {
       toast.error("Error al actualizar el estado")
